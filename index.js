@@ -11,9 +11,12 @@ function halts(src) {
     locations: true
   }) : src;
   var hasBreak = false;
+  var hasThrow = false;
+  var hasReturnOrYield = false;
   var writeHandlers = [];
   var readHandlers = [];
   var callHandlers = [];
+  var breakLabels = [];
   function watch(fn) {
     var writes = [];
     var reads = [];
@@ -36,17 +39,20 @@ function halts(src) {
   function onCall(node) {
     callHandlers.forEach(function (handler) { handler.push(node); });
   }
-  function testForBreak(fn) {
-    var before = hasBreak;
-    hasBreak = false;
+  function testForBreakOrReturnOrYieldOrThrow(fn) {
+    var before = {hasBreak: hasBreak, hasReturnOrYield: hasReturnOrYield, hasThrow: hasThrow, breakLabels: breakLabels};
+    hasBreak = false; hasReturnOrYield = false; hasThrow = false; breakLabels = [];
     fn();
-    var result = hasBreak;
-    hasBreak = before;
+    var result = hasBreak || hasReturnOrYield || hasThrow || breakLabels.length;
+    hasBreak = before.hasBreak;
+    hasReturnOrYield = hasReturnOrYield || before.hasReturnOrYield;
+    hasThrow = hasThrow || before.hasThrow;
+    breakLabels = before.breakLabels.concat(breakLabels);
     return result;
   }
   function whileStatement(node, state, walk) {
     var test, body;
-    var hasBreak = testForBreak(function () {
+    var hasBreak = testForBreakOrReturnOrYieldOrThrow(function () {
       test = watch(function () {
         walk(node.test, state, "Expression");
       });
@@ -106,67 +112,46 @@ function halts(src) {
         c(node.argument, st, "Expression");
       }).reads.forEach(onWrite);
     },
+
     BreakStatement: function (node) {
       if (node.label) {
-        throw node;
+        breakLabels = breakLabels.concat([node.label.name]);
       }
       hasBreak = true;
     },
     LabeledStatement: function (node, st, c) {
-      try {
-        c(node.body, st, "Statement");
-      } catch (ex) {
-        if (ex.type === 'BreakStatement' && ex.label && ex.label.type === 'Identifier' &&
-            ex.label.name === node.label.name) {
-          return;
-        }
-        throw ex;
-      }
+      var before = breakLabels;
+      c(node.body, st, "Statement");
+      breakLabels = breakLabels.filter(function (name) { return name !== node.label.name || before.indexOf(name) !== -1; });
     },
+
     ReturnStatement: function (node, st, c) {
       if (node.argument) c(node.argument, st, "Expression");
-      throw node;
+      hasReturnOrYield = true;
     },
     YieldExpression: function (node, st, c) {
       if (node.argument) c(node.argument, st, "Expression");
-      throw node;
+      hasReturnOrYield = true;
     },
     ThrowStatement: function (node, st, c) {
       c(node.argument, st, "Expression");
-      throw node;
+      hasThrow = true;
     },
     Function: function (node, st, c) {
-      try {
-        c(node.body, st, "ScopeBody");
-      } catch (ex) {
-        if (ex.type === 'ReturnStatement' ||
-            ex.type === 'ThrowStatement' ||
-            ex.type === 'YieldExpression') {
-          return;
-        }
-        throw ex;
-      }
-    },
-    Program: function (node, st, c) {
-      try {
-        for (var i = 0; i < node.body.length; ++i)
-          c(node.body[i], st, "Statement");
-      } catch (ex) {
-        if (ex.type === 'ReturnStatement' || ex.type === 'ThrowStatement') {
-          return;
-        }
-        throw ex;
-      }
+      var hasBreakBefore;
+      var breakLabelsBefore = breakLabels;
+      var hasThrowBefore = hasThrow;
+      var hasReturnOrYieldBefore = hasReturnOrYield;
+      c(node.body, st, "ScopeBody");
+      hasBreak = hasBreakBefore;
+      breakLabels = breakLabelsBefore;
+      hasThrow = hasThrowBefore;
+      hasReturnOrYield = hasReturnOrYieldBefore;
     },
     TryStatement: function (node, st, c) {
-      try {
-        c(node.block, st, "Statement");
-      } catch (ex) {
-        if (ex.type === 'ThrowStatement') {
-          return;
-        }
-        throw ex;
-      }
+      var hasThrowBefore = hasThrow;
+      c(node.block, st, "Statement");
+      hasThrow = hasThrowBefore;
       if (node.handler) c(node.handler.body, st, "ScopeBody");
       if (node.finalizer) c(node.finalizer, st, "Statement");
     }
