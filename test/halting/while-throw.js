@@ -1,3 +1,6 @@
-while (true) {
-  throw new Error('oops');
+try {
+  while (true) {
+    throw new Error('oops');
+  }
+} catch (ex) {
 }

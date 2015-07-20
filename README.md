@@ -24,6 +24,37 @@ try {
 }
 ```
 
+You can also catch any addtional errors by using `halts.loopProtect`.
+
+```js
+var halts = require('halting-problem');
+try {
+  var src = halts.loopProtect('function foo() { return true; } while (foo());');
+  Function('haltingProblem', src)(halts);
+  console.log('It halts!');
+} catch (ex) {
+  console.log('oops, this program never halts');
+}
+```
+
+## API
+
+### halts(src)
+
+Assert that some code might halt.  This will catch **some** really obvious errors where a `while` loop never exits.  It throws an error if `src` is some JavaScript with an obvious infinite loop.
+
+### halts.loopProtect(src, protectFn)
+
+Adds calls to `protectFn` (which defaults to `haltingProblem.protect`) inside any places where an infinite loop might occur.
+
+### halts.protect(lineNumber)
+
+Throws an error if more than 1 second (or the specified timeout) has elapsed since the last time `halts.reset` was called.
+
+### halts.reset(timeout)
+
+Resets the timeout (which defaults to 1 second).
+
 ## Examples
 
 This example halts:
