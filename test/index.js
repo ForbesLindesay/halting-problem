@@ -48,7 +48,17 @@ test('loop protect', function () {
           var src = halts.loopProtect(fs.readFileSync(__dirname + '/not-halting/' + testCase, 'utf8'));
           Function('haltingProblem', src)(halts);
         } catch (ex) {
-          if (!(ex && ex.message && /Possible infinite loop/.test(ex.message))) {
+          if (
+            !(
+              ex && (
+                (
+                  ex.message &&
+                  /Possible infinite loop/.test(ex.message)
+                ) ||
+                ex.name === 'SyntaxError'
+              )
+            )
+          ) {
             throw ex;
           }
           return;
