@@ -5,7 +5,7 @@ Solves the halting problem :)
 Not really, sadly that's impossible.  What this program does aim to do is pick up on some really simple examples of while loops and for loops that never terminate.  It's extremely limited and written with the aim of only ever picking up programs that definitely never halt.
 
 [![Build Status](https://img.shields.io/travis/ForbesLindesay/halting-problem/master.svg)](https://travis-ci.org/ForbesLindesay/halting-problem)
-[![Dependency Status](https://img.shields.io/gemnasium/ForbesLindesay/halting-problem.svg)](https://gemnasium.com/ForbesLindesay/halting-problem)
+[![Dependency Status](https://img.shields.io/david/ForbesLindesay/halting-problem.svg)](https://david-dm.org/ForbesLindesay/halting-problem)
 [![NPM version](https://img.shields.io/npm/v/halting-problem.svg)](https://www.npmjs.org/package/halting-problem)
 
 ## Installation
