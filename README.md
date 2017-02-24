@@ -1,5 +1,7 @@
 # halting-problem
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/ForbesLindesay/halting-problem.svg)](https://greenkeeper.io/)
+
 Solves the halting problem :)
 
 Not really, sadly that's impossible.  What this program does aim to do is pick up on some really simple examples of while loops and for loops that never terminate.  It's extremely limited and written with the aim of only ever picking up programs that definitely never halt.
